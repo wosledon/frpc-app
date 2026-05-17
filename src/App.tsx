@@ -34,79 +34,19 @@ import {
   ExitToApp,
   PowerSettingsNew,
 } from "@mui/icons-material";
-import { styled, keyframes } from "@mui/material/styles";
+import { keyframes } from "@mui/material/styles";
 
 // 动画定义
-const pulse = keyframes`
-  0% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-    transform: scale(1);
-  }
-  70% {
-    box-shadow: 0 0 0 25px rgba(34, 197, 94, 0);
-    transform: scale(1.08);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-    transform: scale(1);
-  }
-`;
-
-const pulseStop = keyframes`
-  0% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-    transform: scale(1);
-  }
-  70% {
-    box-shadow: 0 0 0 25px rgba(239, 68, 68, 0);
-    transform: scale(1.08);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-    transform: scale(1);
-  }
-`;
-
-const rotate = keyframes`
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-`;
-
-const float = keyframes`
+const breathe = keyframes`
   0%, 100% {
-    transform: translateY(0px) rotate(0deg);
+    transform: scale(1);
+    opacity: 0.6;
   }
-  33% {
-    transform: translateY(-15px) rotate(5deg);
-  }
-  66% {
-    transform: translateY(5px) rotate(-3deg);
+  50% {
+    transform: scale(1.15);
+    opacity: 0.3;
   }
 `;
-
-// 样式化的按钮
-const PowerButton = styled(Button)(() => ({
-  width: 180,
-  height: 180,
-  borderRadius: '50%',
-  fontSize: '3rem',
-  animation: `${pulse} 2s infinite`,
-  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-  border: '3px solid rgba(255, 255, 255, 0.3)',
-  backdropFilter: 'blur(10px)',
-  background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)',
-  '&:hover': {
-    transform: 'scale(1.12)',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-  },
-  '&:active': {
-    transform: 'scale(0.95)',
-  },
-}));
 
 const drawerWidth = 280;
 
@@ -128,17 +68,20 @@ function MenuItem({ icon, text, onClick }: MenuProps) {
         mx: 1.5,
         my: 0.5,
         transition: 'all 0.2s ease',
+        color: 'rgba(255, 255, 255, 0.7)',
         '&:hover': { 
-          bgcolor: 'rgba(102, 126, 234, 0.1)',
+          bgcolor: 'rgba(99, 102, 241, 0.15)',
+          color: 'white',
           transform: 'translateX(4px)',
         } 
       }} 
       component="li"
     >
-      <ListItemIcon sx={{ minWidth: 45, color: '#667eea' }}>{icon}</ListItemIcon>
+      <ListItemIcon sx={{ minWidth: 45, color: 'inherit' }}>{icon}</ListItemIcon>
       <ListItemText 
         primary={text} 
         sx={{ 
+          color: 'inherit',
           '& .MuiListItemText-primary': {
             fontWeight: 500,
             fontSize: '0.95rem',
@@ -188,236 +131,182 @@ function HomePage({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 'calc(100vh - 64px)',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+        height: '100%',
+        background: '#0f0f23',
         position: 'relative',
         overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 70%)',
-        }
       }}
     >
-      {/* 背景装饰动画 */}
-      <Box
-        sx={{
-          position: 'absolute',
-          width: 400,
-          height: 400,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
-          top: '-10%',
-          left: '-5%',
-          animation: `${float} 8s ease-in-out infinite`,
-          filter: 'blur(40px)',
-        }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          width: 300,
-          height: 300,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%)',
-          bottom: '-5%',
-          right: '-5%',
-          animation: `${float} 10s ease-in-out infinite 2s`,
-          filter: 'blur(30px)',
-        }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          width: 200,
-          height: 200,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-          top: '30%',
-          right: '15%',
-          animation: `${float} 7s ease-in-out infinite 1s`,
-          filter: 'blur(20px)',
-        }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          width: 150,
-          height: 150,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
-          bottom: '30%',
-          left: '10%',
-          animation: `${float} 9s ease-in-out infinite 3s`,
-          filter: 'blur(15px)',
-        }}
-      />
+      {/* 背景光晕已移除 */}
 
-      {/* 网格装饰 */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)',
-          backgroundSize: '50px 50px',
-          opacity: 0.3,
-        }}
-      />
+      {/* 星星装饰 - 限制在内部 */}
+      <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        {Array.from({ length: 12 }).map((_, i) => (
+          <Box
+            key={i}
+            sx={{
+              position: 'absolute',
+              width: 1,
+              height: 1,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.4)',
+              top: `${15 + (i * 7) % 65}%`,
+              left: `${10 + (i * 11) % 80}%`,
+              animation: `${breathe} ${3 + (i % 3)}s ease-in-out infinite`,
+              animationDelay: `${(i * 0.3) % 2}s`,
+            }}
+          />
+        ))}
+      </Box>
 
       {/* 状态指示器 */}
       <Box
         sx={{
           position: 'absolute',
-          top: 30,
-          right: 30,
+          top: 16,
+          right: 16,
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5,
-          background: 'rgba(255, 255, 255, 0.15)',
-          backdropFilter: 'blur(20px)',
-          px: 2.5,
-          py: 1.2,
-          borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+          gap: 1,
+          background: 'rgba(255, 255, 255, 0.04)',
+          px: 1.5,
+          py: 0.6,
+          borderRadius: 4,
+          border: '1px solid rgba(255, 255, 255, 0.06)',
         }}
       >
         <Box
           sx={{
-            width: 10,
-            height: 10,
+            width: 5,
+            height: 5,
             borderRadius: '50%',
-            bgcolor: isRunning ? '#22c55e' : '#94a3b8',
-            animation: isRunning ? `${rotate} 2s linear infinite` : 'none',
-            boxShadow: isRunning ? '0 0 10px #22c55e' : 'none',
+            bgcolor: isRunning ? '#10b981' : '#4b5563',
+            boxShadow: isRunning ? '0 0 6px #10b981' : 'none',
           }}
         />
         <Typography 
-          color="white" 
           sx={{ 
-            fontWeight: 600,
-            fontSize: '0.95rem',
-            letterSpacing: '0.5px',
+            color: 'rgba(255, 255, 255, 0.45)',
+            fontWeight: 500,
+            fontSize: '0.7rem',
           }}
         >
           {isRunning ? '运行中' : '已停止'}
         </Typography>
       </Box>
 
-      {/* 主卡片 */}
-      <Paper
-        elevation={0}
+      {/* 主内容 */}
+      <Box
         sx={{
-          p: 5,
-          borderRadius: 5,
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(30px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 3,
+          justifyContent: 'center',
+          gap: 2,
           position: 'relative',
           zIndex: 1,
-          maxWidth: 420,
-          width: '90%',
         }}
       >
         {/* 标题 */}
-        <Box sx={{ textAlign: 'center', mb: 1 }}>
+        <Box sx={{ textAlign: 'center' }}>
           <Typography 
-            variant="h3" 
             sx={{ 
               color: 'white',
-              fontWeight: 'bold',
-              mb: 1,
-              letterSpacing: '-0.5px',
-              textShadow: '0 2px 10px rgba(0, 0, 0, 0.2)',
+              fontWeight: 700,
+              fontSize: '1.4rem',
+              letterSpacing: '-0.3px',
+              lineHeight: 1.2,
             }}
           >
             Frpc Manager
           </Typography>
           <Typography 
-            variant="body2" 
             sx={{ 
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontSize: '0.9rem',
+              color: 'rgba(255, 255, 255, 0.3)',
+              fontSize: '0.7rem',
+              letterSpacing: '1px',
+              mt: 0.3,
             }}
           >
             内网穿透管理工具
           </Typography>
         </Box>
-        
+
         {/* 主按钮 */}
-        <PowerButton
-          variant="contained"
+        <Button
           onClick={onToggle}
           disabled={isLoading}
           sx={{
-            bgcolor: isRunning ? 'rgba(239, 68, 68, 0.9)' : 'rgba(34, 197, 94, 0.9)',
-            animation: isRunning ? `${pulseStop} 2s infinite` : `${pulse} 2s infinite`,
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            minWidth: 'auto',
+            p: 0,
+            background: isRunning 
+              ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+              : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            boxShadow: isRunning
+              ? '0 4px 20px rgba(239, 68, 68, 0.3)'
+              : '0 4px 20px rgba(99, 102, 241, 0.3)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            border: 'none',
             '&:hover': {
-              bgcolor: isRunning ? 'rgba(239, 68, 68, 1)' : 'rgba(34, 197, 94, 1)',
+              transform: 'scale(1.08)',
+              boxShadow: isRunning
+                ? '0 6px 28px rgba(239, 68, 68, 0.45)'
+                : '0 6px 28px rgba(99, 102, 241, 0.45)',
+            },
+            '&:active': {
+              transform: 'scale(0.95)',
             },
           }}
         >
           {isLoading ? (
-            <CircularProgress size={50} sx={{ color: 'white' }} />
+            <CircularProgress size={24} sx={{ color: 'white' }} />
           ) : isRunning ? (
-            <Stop sx={{ fontSize: '4.5rem', color: 'white' }} />
+            <Stop sx={{ fontSize: '1.8rem', color: 'white' }} />
           ) : (
-            <PlayArrow sx={{ fontSize: '4.5rem', color: 'white' }} />
+            <PlayArrow sx={{ fontSize: '1.8rem', color: 'white', ml: 0.3 }} />
           )}
-        </PowerButton>
+        </Button>
 
         {/* 提示文字 */}
         <Typography 
-          variant="h6" 
           sx={{ 
-            color: 'rgba(255, 255, 255, 0.9)',
-            fontWeight: 500,
-            fontSize: '1.1rem',
+            color: 'rgba(255, 255, 255, 0.35)',
+            fontSize: '0.75rem',
+            fontWeight: 400,
           }}
         >
-          {isRunning ? '点击停止服务' : '点击启动服务'}
+          {isRunning ? '点击停止' : '点击启动'}
         </Typography>
 
         {/* 下载按钮 */}
         {!isRunning && (
           <Button
-            variant="outlined"
-            startIcon={<Download />}
             onClick={onDownload}
             disabled={isLoading}
             sx={{
-              color: 'white',
-              borderColor: 'rgba(255, 255, 255, 0.4)',
-              mt: 1,
-              px: 3,
-              py: 1.2,
-              borderRadius: 2,
-              backdropFilter: 'blur(10px)',
-              background: 'rgba(255, 255, 255, 0.1)',
+              color: 'rgba(255, 255, 255, 0.3)',
               textTransform: 'none',
-              fontWeight: 500,
+              fontSize: '0.7rem',
+              py: 0.4,
+              px: 1.2,
+              borderRadius: 1.2,
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              background: 'transparent',
               '&:hover': {
-                borderColor: 'rgba(255, 255, 255, 0.6)',
-                background: 'rgba(255, 255, 255, 0.2)',
+                color: 'rgba(255, 255, 255, 0.55)',
+                background: 'rgba(255, 255, 255, 0.04)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
               },
             }}
           >
-            下载 FRPC
+            <Download sx={{ fontSize: '0.8rem', mr: 0.5 }} />
+            下载 frpc
           </Button>
         )}
-      </Paper>
+      </Box>
     </Box>
   );
 }
@@ -602,10 +491,10 @@ function App() {
       case 'server':
         return (
           <Box sx={{ p: 4, maxWidth: 800, mx: 'auto' }}>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'white' }}>
               frps 服务器配置
             </Typography>
-            <Paper sx={{ p: 4, borderRadius: 3, boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
+            <Paper sx={{ p: 4, borderRadius: 3, bgcolor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.05)' }}>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <TextField
                   label="服务器地址"
@@ -621,7 +510,11 @@ function App() {
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
-                    }
+                      color: 'white',
+                      '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                    },
+                    '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' },
                   }}
                 />
                 <TextField
@@ -642,7 +535,11 @@ function App() {
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
-                    }
+                      color: 'white',
+                      '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                    },
+                    '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' },
                   }}
                 />
                 <TextField
@@ -660,7 +557,11 @@ function App() {
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
-                    }
+                      color: 'white',
+                      '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+                      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                    },
+                    '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' },
                   }}
                 />
               </Box>
@@ -672,7 +573,7 @@ function App() {
         return (
           <Box sx={{ p: 4, maxWidth: 900, mx: 'auto' }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-              <Typography variant="h4" sx={{ fontWeight: 600 }}>代理配置</Typography>
+              <Typography variant="h4" sx={{ fontWeight: 600, color: 'white' }}>代理配置</Typography>
               <Button
                 variant="contained"
                 startIcon={<Add />}
@@ -682,7 +583,7 @@ function App() {
                   textTransform: 'none',
                   fontWeight: 500,
                   px: 3,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                 }}
               >
                 添加代理
@@ -691,14 +592,14 @@ function App() {
 
             <List>
               {config.proxies.map((proxy, index) => (
-                <Paper key={index} sx={{ mb: 2, p: 3, borderRadius: 3, boxShadow: '0 2px 12px rgba(0, 0, 0, 0.06)' }}>
+                <Paper key={index} sx={{ mb: 2, p: 3, borderRadius: 3, bgcolor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
                     <TextField
                       label="名称"
                       value={proxy.name}
                       onChange={(e) => handleProxyChange(index, "name", e.target.value)}
                       size="small"
-                      sx={{ flex: 1 }}
+                      sx={{ flex: 1, '& .MuiOutlinedInput-root': { color: 'white', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }}
                     />
                     <TextField
                       label="类型"
@@ -706,7 +607,7 @@ function App() {
                       value={proxy.type}
                       onChange={(e) => handleProxyChange(index, "type", e.target.value)}
                       size="small"
-                      sx={{ width: 120 }}
+                      sx={{ width: 120, '& .MuiOutlinedInput-root': { color: 'white', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }}
                       slotProps={{ select: { native: true } }}
                     >
                       <option value="tcp">TCP</option>
@@ -735,7 +636,7 @@ function App() {
                       value={proxy.local_ip}
                       onChange={(e) => handleProxyChange(index, "local_ip", e.target.value)}
                       size="small"
-                      sx={{ flex: 1 }}
+                      sx={{ flex: 1, '& .MuiOutlinedInput-root': { color: 'white', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }}
                     />
                     <TextField
                       label="本地端口"
@@ -743,7 +644,7 @@ function App() {
                       value={proxy.local_port}
                       onChange={(e) => handleProxyChange(index, "local_port", parseInt(e.target.value) || 0)}
                       size="small"
-                      sx={{ width: 120 }}
+                      sx={{ width: 120, '& .MuiOutlinedInput-root': { color: 'white', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }}
                     />
                     <TextField
                       label="远程端口"
@@ -751,14 +652,14 @@ function App() {
                       value={proxy.remote_port || ""}
                       onChange={(e) => handleProxyChange(index, "remote_port", parseInt(e.target.value) || undefined)}
                       size="small"
-                      sx={{ width: 120 }}
+                      sx={{ width: 120, '& .MuiOutlinedInput-root': { color: 'white', '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }}
                     />
                   </Box>
                 </Paper>
               ))}
               {config.proxies.length === 0 && (
-                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3 }}>
-                  <Typography color="text.secondary" sx={{ fontSize: '1.1rem' }}>
+                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, bgcolor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem' }}>
                     暂无代理配置，点击"添加代理"开始
                   </Typography>
                 </Paper>
@@ -770,13 +671,13 @@ function App() {
       case 'settings':
         return (
           <Box sx={{ p: 4, maxWidth: 700, mx: 'auto' }}>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'white' }}>
               设置
             </Typography>
-            <Paper sx={{ p: 4, borderRadius: 3, boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}>
+            <Paper sx={{ p: 4, borderRadius: 3, bgcolor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.05)' }}>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontWeight: 500 }}>开机自启</Typography>
+                  <Typography sx={{ fontWeight: 500, color: 'white' }}>开机自启</Typography>
                   <Button
                     variant={autoLaunch ? "contained" : "outlined"}
                     onClick={() => handleAutoLaunchToggle(!autoLaunch)}
@@ -789,7 +690,7 @@ function App() {
                     {autoLaunch ? "已启用" : "未启用"}
                   </Button>
                 </Box>
-                <Divider />
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
                 <Box sx={{ display: "flex", gap: 2 }}>
                   <Button
                     variant="outlined"
@@ -800,6 +701,8 @@ function App() {
                       borderRadius: 2,
                       textTransform: 'none',
                       fontWeight: 500,
+                      color: 'rgba(255,255,255,0.7)',
+                      borderColor: 'rgba(255,255,255,0.2)',
                     }}
                   >
                     导入配置
@@ -813,6 +716,8 @@ function App() {
                       borderRadius: 2,
                       textTransform: 'none',
                       fontWeight: 500,
+                      color: 'rgba(255,255,255,0.7)',
+                      borderColor: 'rgba(255,255,255,0.2)',
                     }}
                   >
                     导出配置
@@ -829,7 +734,7 @@ function App() {
                     textTransform: 'none',
                     fontWeight: 500,
                     py: 1.5,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                   }}
                 >
                   保存配置
@@ -852,17 +757,18 @@ function App() {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       {/* 顶部应用栏 */}
       <AppBar 
-        position="fixed" 
+        position="static" 
         sx={{ 
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+          background: '#0f0f23',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+          boxShadow: 'none',
+          flexShrink: 0,
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ minHeight: '56px !important' }}>
           <IconButton
             edge="start"
             color="inherit"
@@ -882,7 +788,8 @@ function App() {
             component="div"
             sx={{ 
               fontWeight: 600,
-              letterSpacing: '0.5px',
+              fontSize: '1.1rem',
+              letterSpacing: '0.3px',
             }}
           >
             {currentPage === 'home' ? 'Frpc Manager' : 
@@ -903,15 +810,13 @@ function App() {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            top: 64,
-            height: 'calc(100% - 64px)',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(20px)',
-            borderLeft: '1px solid rgba(0, 0, 0, 0.08)',
+            height: '100%',
+            background: '#1a1a2e',
+            borderLeft: '1px solid rgba(255, 255, 255, 0.05)',
           },
         }}
       >
-        <Box sx={{ width: drawerWidth }} role="presentation">
+        <Box sx={{ width: '100%' }} role="presentation">
           <MenuItem
             icon={<PowerSettingsNew />}
             text="首页"
@@ -927,7 +832,7 @@ function App() {
             text="代理配置"
             onClick={() => { setCurrentPage('proxies'); setDrawerOpen(false); }}
           />
-          <Divider />
+          <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)' }} />
           <MenuItem
             icon={<ExitToApp />}
             text="设置"
@@ -940,9 +845,10 @@ function App() {
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
-          width: '100%',
-          marginTop: '64px',
+          flex: 1,
+          overflow: 'hidden',
+          bgcolor: '#0f0f23',
+          position: 'relative',
         }}
       >
         {renderPage()}
