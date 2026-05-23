@@ -363,7 +363,7 @@ function Sidebar({
     >
       <Box sx={{ px: 1.5, py: 1.5, mb: 1 }}>
         <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-          Frpc Manager
+          FRPC
         </Typography>
         <Typography sx={{ fontSize: "0.65rem", color: "var(--text-muted)", mt: 0.3 }}>
           {t("app.subtitle")}
