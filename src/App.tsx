@@ -496,9 +496,13 @@ function HomePage({
 function ServerPage({
   config,
   setConfig,
+  onSave,
+  isLoading,
 }: {
   config: FrpcConfig;
   setConfig: React.Dispatch<React.SetStateAction<FrpcConfig>>;
+  onSave: () => void;
+  isLoading: boolean;
 }) {
   const { t } = useI18n();
   return (
@@ -562,6 +566,23 @@ function ServerPage({
               fullWidth
               sx={inputSx}
             />
+            <Button
+              variant="contained"
+              startIcon={isLoading ? <CircularProgress size={16} sx={{ color: "white" }} /> : <Save />}
+              onClick={onSave}
+              disabled={isLoading}
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                fontSize: "0.85rem",
+                py: 1.2,
+                borderRadius: 1.5,
+                bgcolor: "var(--accent)",
+                "&:hover": { bgcolor: "var(--accent-hover)" },
+              }}
+            >
+              {t("settings.save")}
+            </Button>
           </Box>
         </Paper>
       </Box>
@@ -574,11 +595,15 @@ function ProxiesPage({
   onAdd,
   onDelete,
   onChange,
+  onSave,
+  isLoading,
 }: {
   config: FrpcConfig;
   onAdd: () => void;
   onDelete: (index: number) => void;
   onChange: (index: number, field: string, value: string | number | undefined) => void;
+  onSave: () => void;
+  isLoading: boolean;
 }) {
   const { t } = useI18n();
   return (
@@ -602,23 +627,44 @@ function ProxiesPage({
               }}
             />
           </Box>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<Add />}
-            onClick={onAdd}
-            sx={{
-              textTransform: "none",
-              fontWeight: 500,
-              fontSize: "0.8rem",
-              borderRadius: 1.5,
-              px: 2,
-              bgcolor: "var(--accent)",
-              "&:hover": { bgcolor: "var(--accent-hover)" },
-            }}
-          >
-            {t("proxies.add")}
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={isLoading ? <CircularProgress size={14} sx={{ color: "var(--accent)" }} /> : <Save />}
+              onClick={onSave}
+              disabled={isLoading}
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                fontSize: "0.8rem",
+                borderRadius: 1.5,
+                px: 2,
+                color: "var(--accent)",
+                borderColor: "var(--accent)",
+                "&:hover": { borderColor: "var(--accent)", bgcolor: "var(--accent-glow)" },
+              }}
+            >
+              {t("settings.save")}
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<Add />}
+              onClick={onAdd}
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                fontSize: "0.8rem",
+                borderRadius: 1.5,
+                px: 2,
+                bgcolor: "var(--accent)",
+                "&:hover": { bgcolor: "var(--accent-hover)" },
+              }}
+            >
+              {t("proxies.add")}
+            </Button>
+          </Box>
         </Box>
 
         {/* Proxy list */}
@@ -1191,7 +1237,14 @@ function AppContent({
   const renderPage = () => {
     switch (currentPage) {
       case "server":
-        return <ServerPage config={config} setConfig={setConfig} />;
+        return (
+          <ServerPage
+            config={config}
+            setConfig={setConfig}
+            onSave={handleSaveConfig}
+            isLoading={isLoading}
+          />
+        );
       case "proxies":
         return (
           <ProxiesPage
@@ -1199,6 +1252,8 @@ function AppContent({
             onAdd={handleAddProxy}
             onDelete={handleDeleteProxy}
             onChange={handleProxyChange}
+            onSave={handleSaveConfig}
+            isLoading={isLoading}
           />
         );
       case "settings":

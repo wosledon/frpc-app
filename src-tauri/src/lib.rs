@@ -266,13 +266,41 @@ async fn get_frpc_status(state: State<'_, AppState>) -> Result<serde_json::Value
     }))
 }
 
-/// 保存配置
+/// 保存配置（转换为 frpc TOML 格式）
 #[tauri::command]
 async fn save_config(state: State<'_, AppState>, config: FrpcConfig) -> Result<String, String> {
     let config_path = state.config_path.lock().unwrap().clone();
 
-    let toml_string =
-        toml::to_string_pretty(&config).map_err(|e| format!("序列化配置失败: {}", e))?;
+    let mut lines = vec![];
+
+    // 顶级字段（无区段包裹）
+    lines.push(format!("serverAddr = \"{}\"", config.frps.server_addr));
+    lines.push(format!("serverPort = {}", config.frps.server_port));
+    lines.push("auth.method = \"token\"".to_string());
+    if !config.frps.auth_token.is_empty() {
+        lines.push(format!("auth.token = \"{}\"", config.frps.auth_token));
+    }
+    lines.push(String::new());
+
+    // 所有代理统一用 [[proxies]] 格式
+    for proxy in &config.proxies {
+        lines.push("[[proxies]]".to_string());
+        lines.push(format!("name = \"{}\"", proxy.name));
+        lines.push(format!("type = \"{}\"", proxy.r#type));
+        lines.push(format!("localIP = \"{}\"", proxy.local_ip));
+        lines.push(format!("localPort = {}", proxy.local_port));
+
+        if let Some(rp) = proxy.remote_port {
+            lines.push(format!("remotePort = {}", rp));
+        }
+        if let Some(domains) = &proxy.custom_domains {
+            let quoted: Vec<String> = domains.iter().map(|d| format!("\"{}\"", d)).collect();
+            lines.push(format!("customDomains = [{}]", quoted.join(", ")));
+        }
+        lines.push(String::new());
+    }
+
+    let toml_string = lines.join("\n");
 
     tokio::fs::write(&config_path, toml_string)
         .await
@@ -281,13 +309,12 @@ async fn save_config(state: State<'_, AppState>, config: FrpcConfig) -> Result<S
     Ok("配置已保存".to_string())
 }
 
-/// 加载配置
+/// 加载配置（支持 frpc TOML 格式）
 #[tauri::command]
 async fn load_config(state: State<'_, AppState>) -> Result<FrpcConfig, String> {
     let config_path = state.config_path.lock().unwrap().clone();
 
     if !config_path.exists() {
-        // 返回默认配置
         return Ok(FrpcConfig {
             frps: FrpsConfig {
                 server_addr: "127.0.0.1".to_string(),
@@ -302,10 +329,84 @@ async fn load_config(state: State<'_, AppState>) -> Result<FrpcConfig, String> {
         .await
         .map_err(|e| format!("读取配置文件失败: {}", e))?;
 
-    let config: FrpcConfig =
+    let value: toml::Value =
         toml::from_str(&content).map_err(|e| format!("解析配置文件失败: {}", e))?;
 
-    Ok(config)
+    let server_addr = value
+        .get("serverAddr")
+        .and_then(|v| v.as_str())
+        .unwrap_or("127.0.0.1")
+        .to_string();
+    let server_port = value
+        .get("serverPort")
+        .and_then(|v| v.as_integer())
+        .unwrap_or(7000) as u16;
+    let auth_token = value
+        .get("auth")
+        .and_then(|v| v.as_table())
+        .and_then(|a| a.get("token"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let mut proxies = vec![];
+
+    // 解析扁平的 [[proxies]] 格式
+    if let Some(proxies_arr) = value.get("proxies").and_then(|v| v.as_array()) {
+        for item in proxies_arr {
+            if let Some(tbl) = item.as_table() {
+                let name = tbl
+                    .get("name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                let ptype = tbl
+                    .get("type")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("tcp")
+                    .to_string();
+                let local_ip = tbl
+                    .get("localIP")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("127.0.0.1")
+                    .to_string();
+                let local_port = tbl
+                    .get("localPort")
+                    .and_then(|v| v.as_integer())
+                    .unwrap_or(0) as u16;
+                let remote_port = tbl
+                    .get("remotePort")
+                    .and_then(|v| v.as_integer())
+                    .map(|v| v as u16);
+                let custom_domains =
+                    tbl.get("customDomains")
+                        .and_then(|v| v.as_array())
+                        .map(|arr| {
+                            arr.iter()
+                                .filter_map(|v| v.as_str().map(String::from))
+                                .collect()
+                        });
+
+                proxies.push(ProxyConfig {
+                    name,
+                    r#type: ptype,
+                    local_ip,
+                    local_port,
+                    remote_port,
+                    custom_domains,
+                });
+            }
+        }
+    }
+
+    Ok(FrpcConfig {
+        frps: FrpsConfig {
+            server_addr,
+            server_port,
+            auth_token,
+        },
+        proxies,
+    })
 }
 
 /// 导入配置（从文件）
@@ -318,7 +419,8 @@ async fn import_config(state: State<'_, AppState>, file_path: String) -> Result<
         .map_err(|e| format!("读取导入文件失败: {}", e))?;
 
     // 验证 TOML 格式
-    let _: FrpcConfig = toml::from_str(&content).map_err(|e| format!("配置文件格式错误: {}", e))?;
+    let _: toml::Value =
+        toml::from_str(&content).map_err(|e| format!("配置文件格式错误: {}", e))?;
 
     // 复制到配置目录
     tokio::fs::copy(&file_path, &config_path)
