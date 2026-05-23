@@ -9,7 +9,7 @@ const translations = {
     "nav.server": "服务器",
     "nav.proxies": "代理",
     "nav.settings": "设置",
-    "app.title": "Frpc Manager",
+    "app.title": "FRPC 管理器",
     "app.subtitle": "内网穿透管理工具",
 
     // Home
@@ -84,7 +84,7 @@ const translations = {
     "nav.server": "Server",
     "nav.proxies": "Proxies",
     "nav.settings": "Settings",
-    "app.title": "Frpc Manager",
+    "app.title": "FRPC Manager",
     "app.subtitle": "NAT Traversal Client",
 
     "home.proxies_count": "proxies configured",

@@ -420,6 +420,7 @@ pub fn run() {
                 .build()?;
 
             let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
                 .tooltip("frpc-app")
                 .menu(&menu)
                 .show_menu_on_left_click(false)
