@@ -153,18 +153,6 @@ function useApp() {
     }
   }, [isRunning, showMessage, t]);
 
-  const handleDownload = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await invoke<string>("download_frpc");
-      showMessage(result);
-    } catch (error) {
-      showMessage(t("msg.download_fail") + error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showMessage, t]);
-
   const handleSaveConfig = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -266,7 +254,7 @@ function useApp() {
     setConfig,
     autoLaunch,
     handleToggleService,
-    handleDownload,
+    showMessage,
     handleSaveConfig,
     handleImportConfig,
     handleExportConfig,
@@ -400,13 +388,11 @@ function HomePage({
   isRunning,
   isLoading,
   onToggle,
-  onDownload,
   config,
 }: {
   isRunning: boolean;
   isLoading: boolean;
   onToggle: () => void;
-  onDownload: () => void;
   config: FrpcConfig;
 }) {
   const { t } = useI18n();
@@ -503,31 +489,6 @@ function HomePage({
           {isRunning ? t("home.action.stop") : t("home.action.start")}
         </Typography>
       </Box>
-
-      {/* Download */}
-      {!isRunning && (
-        <Button
-          onClick={onDownload}
-          disabled={isLoading}
-          startIcon={<Download />}
-          sx={{
-            color: "var(--text-muted)",
-            textTransform: "none",
-            fontSize: "0.75rem",
-            py: 0.6,
-            px: 2,
-            borderRadius: 2,
-            border: "1px solid var(--border-light)",
-            "&:hover": {
-              color: "var(--text-secondary)",
-              borderColor: "var(--border)",
-              bgcolor: "rgba(99, 102, 241, 0.06)",
-            },
-          }}
-        >
-          {t("home.download")}
-        </Button>
-      )}
     </Box>
   );
 }
@@ -803,23 +764,31 @@ function SettingsPage({
   isLoading,
   themeMode,
   lang,
+  binaryStatus,
+  downloadInfo,
   onAutoLaunchToggle,
   onImport,
   onExport,
   onSave,
   onThemeChange,
   onLangChange,
+  onOpenDataDir,
+  onOpenDownloadPage,
 }: {
   autoLaunch: boolean;
   isLoading: boolean;
   themeMode: ThemeMode;
   lang: Lang;
+  binaryStatus: { exists: boolean; path: string } | null;
+  downloadInfo: { download_page: string; platform: string; ext: string; binary_name: string } | null;
   onAutoLaunchToggle: (enabled: boolean) => void;
   onImport: () => void;
   onExport: () => void;
   onSave: () => void;
   onThemeChange: (mode: ThemeMode) => void;
   onLangChange: (lang: Lang) => void;
+  onOpenDataDir: () => void;
+  onOpenDownloadPage: () => void;
 }) {
   const { t } = useI18n();
   return (
@@ -970,6 +939,80 @@ function SettingsPage({
             </Box>
             <Divider sx={{ borderColor: "var(--border-light)" }} />
 
+            {/* frpc Binary */}
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                <Storage sx={{ fontSize: "1.1rem", color: "var(--text-secondary)" }} />
+                <Typography sx={{ fontSize: "0.9rem", fontWeight: 500, color: "var(--text-primary)" }}>
+                  {t("settings.frpc_binary")}
+                </Typography>
+                {binaryStatus && (
+                  <Chip
+                    label={binaryStatus.exists ? t("settings.frpc_status.available") : t("settings.frpc_status.not_found")}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: "0.68rem",
+                      fontWeight: 600,
+                      ml: 1,
+                      bgcolor: binaryStatus.exists ? "var(--success-glow)" : "var(--danger-glow)",
+                      color: binaryStatus.exists ? "var(--success)" : "var(--danger)",
+                    }}
+                  />
+                )}
+              </Box>
+              {binaryStatus?.exists && (
+                <Typography sx={{ fontSize: "0.72rem", color: "var(--text-muted)", mb: 1, fontFamily: "monospace", wordBreak: "break-all" }}>
+                  {binaryStatus.path}
+                </Typography>
+              )}
+              <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", mb: 1.5 }}>
+                {t("settings.download_hint")}
+              </Typography>
+              {downloadInfo && (
+                <Typography sx={{ fontSize: "0.7rem", color: "var(--text-muted)", mb: 1.5, fontFamily: "monospace" }}>
+                  {t("settings.frpc_status.path")}: frp_*_{downloadInfo.platform}/{downloadInfo.binary_name}
+                </Typography>
+              )}
+              <Box sx={{ display: "flex", gap: 1.5 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Download />}
+                  onClick={onOpenDownloadPage}
+                  sx={{
+                    flex: 1,
+                    textTransform: "none",
+                    fontSize: "0.8rem",
+                    borderRadius: 1.5,
+                    color: "var(--text-secondary)",
+                    borderColor: "var(--border)",
+                    "&:hover": { borderColor: "var(--accent)", color: "var(--text-primary)" },
+                  }}
+                >
+                  {t("settings.download_page")}
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Refresh />}
+                  onClick={onOpenDataDir}
+                  sx={{
+                    flex: 1,
+                    textTransform: "none",
+                    fontSize: "0.8rem",
+                    borderRadius: 1.5,
+                    color: "var(--text-secondary)",
+                    borderColor: "var(--border)",
+                    "&:hover": { borderColor: "var(--accent)", color: "var(--text-primary)" },
+                  }}
+                >
+                  {t("settings.open_data_dir")}
+                </Button>
+              </Box>
+            </Box>
+            <Divider sx={{ borderColor: "var(--border-light)" }} />
+
             {/* Save */}
             <Button
               variant="contained"
@@ -1097,6 +1140,9 @@ function AppContent({
   onLangChange: (lang: Lang) => void;
 }) {
   const { t } = useI18n();
+  const [binaryStatus, setBinaryStatus] = useState<{ exists: boolean; path: string } | null>(null);
+  const [downloadInfo, setDownloadInfo] = useState<{ download_page: string; platform: string; ext: string; binary_name: string } | null>(null);
+
   const {
     currentPage,
     setCurrentPage,
@@ -1109,7 +1155,7 @@ function AppContent({
     setConfig,
     autoLaunch,
     handleToggleService,
-    handleDownload,
+    showMessage,
     handleSaveConfig,
     handleImportConfig,
     handleExportConfig,
@@ -1118,6 +1164,25 @@ function AppContent({
     handleDeleteProxy,
     handleProxyChange,
   } = useApp();
+
+  useEffect(() => {
+    invoke<{ exists: boolean; path: string }>("check_binary_status").then(setBinaryStatus).catch(() => {});
+    invoke<{ download_page: string; platform: string; ext: string; binary_name: string }>("get_download_info").then(setDownloadInfo).catch(() => {});
+  }, []);
+
+  const handleOpenDataDir = useCallback(async () => {
+    try {
+      await invoke("open_data_dir");
+    } catch (error) {
+      showMessage(String(error));
+    }
+  }, [showMessage]);
+
+  const handleOpenDownloadPage = useCallback(async () => {
+    if (downloadInfo?.download_page) {
+      window.open(downloadInfo.download_page, "_blank");
+    }
+  }, [downloadInfo]);
 
   const renderPage = () => {
     switch (currentPage) {
@@ -1139,12 +1204,16 @@ function AppContent({
             isLoading={isLoading}
             themeMode={themeMode}
             lang={lang}
+            binaryStatus={binaryStatus}
+            downloadInfo={downloadInfo}
             onAutoLaunchToggle={handleAutoLaunchToggle}
             onImport={handleImportConfig}
             onExport={handleExportConfig}
             onSave={handleSaveConfig}
             onThemeChange={onThemeChange}
             onLangChange={onLangChange}
+            onOpenDataDir={handleOpenDataDir}
+            onOpenDownloadPage={handleOpenDownloadPage}
           />
         );
       default:
@@ -1153,7 +1222,6 @@ function AppContent({
             isRunning={isRunning}
             isLoading={isLoading}
             onToggle={handleToggleService}
-            onDownload={handleDownload}
             config={config}
           />
         );

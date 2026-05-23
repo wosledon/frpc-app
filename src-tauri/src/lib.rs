@@ -91,135 +91,80 @@ fn get_platform_identifier() -> Result<&'static str, String> {
     }
 }
 
-/// 从 GitHub Releases 下载 frpc 二进制
+/// 获取下载信息（URL + 平台文件名）
 #[tauri::command]
-async fn download_frpc(app_handle: tauri::AppHandle) -> Result<String, String> {
-    let app_dir = get_app_dir(&app_handle)?;
-    let binary_path = get_binary_path(&app_dir);
-
-    // 获取最新 release
-    let client = reqwest::Client::new();
-    let release_url = "https://api.github.com/repos/fatedier/frp/releases/latest";
-
-    let response = client
-        .get(release_url)
-        .header("User-Agent", "frpc-app")
-        .send()
-        .await
-        .map_err(|e| format!("获取 release 信息失败: {}", e))?;
-
-    let release: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|e| format!("解析 release 信息失败: {}", e))?;
-
-    let version = release["tag_name"]
-        .as_str()
-        .ok_or("无法获取版本号")?
-        .to_string();
-
+async fn get_download_info() -> Result<serde_json::Value, String> {
     let platform = get_platform_identifier()?;
-
-    // Windows 用 .zip，其他平台用 .tar.gz
     let is_windows = cfg!(target_os = "windows");
     let ext = if is_windows { "zip" } else { "tar.gz" };
-    let asset_name = format!("frp_{}_{}.{}", &version[1..], platform, ext);
 
-    // 查找对应的 asset
-    let assets = release["assets"].as_array().ok_or("无法获取 assets 列表")?;
-
-    let asset = assets
-        .iter()
-        .find(|a| a["name"].as_str() == Some(&asset_name))
-        .ok_or(format!(
-            "未找到适用于 {} 的 frpc 二进制 ({})",
-            platform, asset_name
-        ))?;
-
-    let download_url = asset["browser_download_url"]
-        .as_str()
-        .ok_or("无法获取下载链接")?;
-
-    // 下载文件
-    let response = client
-        .get(download_url)
-        .send()
-        .await
-        .map_err(|e| format!("下载失败: {}", e))?;
-
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| format!("读取下载内容失败: {}", e))?;
-
-    // 同步解压，提取 frpc 二进制到内存（避免非 Send 类型跨 await）
+    let download_page = "https://github.com/fatedier/frp/releases".to_string();
     let binary_name = if is_windows { "frpc.exe" } else { "frpc" };
-    let version_dir = format!("frp_{}_{}", &version[1..], platform);
-    let bytes_vec = bytes.to_vec();
 
-    let extracted: Vec<u8> = if is_windows {
-        extract_from_zip(&bytes_vec, binary_name, &version_dir)?
-    } else {
-        extract_from_tar_gz(&bytes_vec, binary_name, &version_dir)?
-    };
-
-    // 异步写入文件
-    tokio::fs::write(&binary_path, &extracted)
-        .await
-        .map_err(|e| format!("写入 frpc 失败: {}", e))?;
-
-    // Linux/macOS 设置执行权限
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let _ = std::fs::set_permissions(&binary_path, std::fs::Permissions::from_mode(0o755));
-    }
-
-    Ok(format!("下载成功: {}", version))
+    Ok(serde_json::json!({
+        "download_page": download_page,
+        "platform": platform,
+        "ext": ext,
+        "binary_name": binary_name,
+    }))
 }
 
-fn extract_from_zip(data: &[u8], binary_name: &str, version_dir: &str) -> Result<Vec<u8>, String> {
-    let reader = std::io::Cursor::new(data);
-    let mut archive =
-        zip::ZipArchive::new(reader).map_err(|e| format!("打开 zip 失败: {}", e))?;
-
-    for i in 0..archive.len() {
-        let mut file = archive
-            .by_index(i)
-            .map_err(|e| format!("读取 zip 条目失败: {}", e))?;
-        let name = file.name().to_string();
-        if name.ends_with(binary_name) && name.contains(version_dir) {
-            let mut out = Vec::new();
-            std::io::Read::read_to_end(&mut file, &mut out)
-                .map_err(|e| format!("读取文件内容失败: {}", e))?;
-            return Ok(out);
-        }
-    }
-    Err("zip 中未找到 frpc.exe".to_string())
+/// 获取数据目录路径
+#[tauri::command]
+async fn get_data_dir(app_handle: tauri::AppHandle) -> Result<String, String> {
+    let app_dir = get_app_dir(&app_handle)?;
+    Ok(app_dir.to_string_lossy().to_string())
 }
 
-fn extract_from_tar_gz(data: &[u8], binary_name: &str, version_dir: &str) -> Result<Vec<u8>, String> {
-    let gz_decoder = flate2::read::GzDecoder::new(data);
-    let mut archive = tar::Archive::new(gz_decoder);
-
-    for entry in archive
-        .entries()
-        .map_err(|e| format!("读取 tar 条目失败: {}", e))?
+/// 在文件管理器中打开数据目录
+#[tauri::command]
+async fn open_data_dir(app_handle: tauri::AppHandle) -> Result<String, String> {
+    let app_dir = get_app_dir(&app_handle)?;
+    #[cfg(target_os = "windows")]
     {
-        let mut entry = entry.map_err(|e| format!("读取 tar 条目失败: {}", e))?;
-        let path = entry
-            .path()
-            .map_err(|e| format!("获取路径失败: {}", e))?
-            .to_string_lossy()
-            .to_string();
-        if path.ends_with(binary_name) && path.contains(version_dir) {
-            let mut out = Vec::new();
-            std::io::Read::read_to_end(&mut entry, &mut out)
-                .map_err(|e| format!("读取文件内容失败: {}", e))?;
-            return Ok(out);
-        }
+        std::process::Command::new("explorer")
+            .arg(app_dir.to_string_lossy().to_string())
+            .spawn()
+            .map_err(|e| format!("打开文件管理器失败: {}", e))?;
     }
-    Err("tar.gz 中未找到 frpc".to_string())
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(app_dir.to_string_lossy().to_string())
+            .spawn()
+            .map_err(|e| format!("打开文件管理器失败: {}", e))?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(app_dir.to_string_lossy().to_string())
+            .spawn()
+            .map_err(|e| format!("打开文件管理器失败: {}", e))?;
+    }
+    Ok("已打开目录".to_string())
+}
+
+/// 设置 frpc 二进制文件路径
+#[tauri::command]
+async fn set_binary_path(state: State<'_, AppState>, path: String) -> Result<String, String> {
+    let new_path = PathBuf::from(&path);
+    if !new_path.exists() {
+        return Err("文件不存在".to_string());
+    }
+    *state.binary_path.lock().unwrap() = new_path;
+    Ok("已设置 frpc 路径".to_string())
+}
+
+/// 检查 frpc 二进制是否可用
+#[tauri::command]
+async fn check_binary_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let binary_path = state.binary_path.lock().unwrap().clone();
+    let exists = binary_path.exists();
+    Ok(serde_json::json!({
+        "exists": exists,
+        "path": binary_path.to_string_lossy(),
+    }))
+}
 
 /// 启动 frpc 进程
 #[tauri::command]
@@ -455,7 +400,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            download_frpc,
+            get_download_info,
+            get_data_dir,
+            open_data_dir,
+            set_binary_path,
+            check_binary_status,
             start_frpc,
             stop_frpc,
             get_frpc_status,

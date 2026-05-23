@@ -53,6 +53,18 @@ const translations = {
     "settings.theme.light": "浅色",
     "settings.language": "语言",
 
+    // Frpc Binary
+    "settings.frpc_binary": "frpc 程序",
+    "settings.frpc_binary_desc": "设置 frpc 二进制文件路径",
+    "settings.frpc_status.available": "可用",
+    "settings.frpc_status.not_found": "未找到",
+    "settings.frpc_status.path": "路径",
+    "settings.download_hint": "请从 GitHub 下载对应平台的 frpc，解压后将 frpc 程序放到数据目录中",
+    "settings.download_page": "下载页面",
+    "settings.open_data_dir": "打开数据目录",
+    "settings.set_binary_path": "设置 frpc 路径",
+    "settings.binary_path_set": "已设置 frpc 路径",
+
     // Messages
     "msg.load_config_fail": "加载配置失败: ",
     "msg.save_config_fail": "保存配置失败: ",
@@ -110,6 +122,17 @@ const translations = {
     "settings.theme.dark": "Dark",
     "settings.theme.light": "Light",
     "settings.language": "Language",
+
+    "settings.frpc_binary": "frpc Binary",
+    "settings.frpc_binary_desc": "Set frpc binary file path",
+    "settings.frpc_status.available": "Available",
+    "settings.frpc_status.not_found": "Not Found",
+    "settings.frpc_status.path": "Path",
+    "settings.download_hint": "Download frpc for your platform from GitHub, extract and place it in the data directory",
+    "settings.download_page": "Download Page",
+    "settings.open_data_dir": "Open Data Directory",
+    "settings.set_binary_path": "Set frpc Path",
+    "settings.binary_path_set": "frpc path set",
 
     "msg.load_config_fail": "Failed to load config: ",
     "msg.save_config_fail": "Failed to save config: ",
