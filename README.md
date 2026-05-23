@@ -2,12 +2,16 @@
 
 <div align="center">
 
+**[English](./README_en.md) | 简体中文**
+
 **简洁的 frpc 内网穿透图形化管理工具**
 
-![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Rust](https://img.shields.io/badge/Rust-2021-orange)
 ![React](https://img.shields.io/badge/React-19-blueviolet)
+![Release](https://img.shields.io/github/v/release/wosledon/frpc-app)
+[![Star History](https://api.star-history.com/svg?repos=wosledon/frpc-app&type=Timeline)](https://star-history.com/#wosledon/frpc-app&Timeline)
 
 </div>
 
@@ -26,7 +30,7 @@
 
 ## 特性
 
-- **跨平台**：Windows / macOS / Linux
+- **跨平台**：Windows / Linux
 - **便携化**：数据（frpc 二进制 + 配置文件）存放于可执行文件同级 `data/` 目录，**不依赖 AppData**
 - **双主题**：深色（默认）/ 浅色模式
 - **双语**：中文 / English
@@ -96,3 +100,7 @@ frpc-app/
 ## License
 
 MIT
+
+## 相关项目
+
+- [fatedier/frp](https://github.com/fatedier/frp) — frp 内网穿透项目，本应用基于它工作
