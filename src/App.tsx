@@ -765,6 +765,7 @@ function SettingsPage({
   themeMode,
   lang,
   binaryStatus,
+  binaryName,
   onAutoLaunchToggle,
   onImport,
   onExport,
@@ -779,6 +780,7 @@ function SettingsPage({
   themeMode: ThemeMode;
   lang: Lang;
   binaryStatus: { exists: boolean; path: string } | null;
+  binaryName: string;
   onAutoLaunchToggle: (enabled: boolean) => void;
   onImport: () => void;
   onExport: () => void;
@@ -965,7 +967,7 @@ function SettingsPage({
                 </Typography>
               )}
               <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", mb: 1.5 }}>
-                {t("settings.download_hint")}
+                {binaryName ? `${binaryName} 直接放入数据目录即可` : t("settings.download_hint")}
               </Typography>
               <Box sx={{ display: "flex", gap: 1.5 }}>
                 <Button
@@ -1135,6 +1137,7 @@ function AppContent({
   const { t } = useI18n();
   const [binaryStatus, setBinaryStatus] = useState<{ exists: boolean; path: string } | null>(null);
   const [downloadInfo, setDownloadInfo] = useState<{ download_page: string; platform: string; ext: string; binary_name: string } | null>(null);
+  const [binaryName, setBinaryName] = useState<string>("");
 
   const {
     currentPage,
@@ -1161,6 +1164,7 @@ function AppContent({
   useEffect(() => {
     invoke<{ exists: boolean; path: string }>("check_binary_status").then(setBinaryStatus).catch(() => {});
     invoke<{ download_page: string; platform: string; ext: string; binary_name: string }>("get_download_info").then(setDownloadInfo).catch(() => {});
+    invoke<string>("get_binary_name").then(setBinaryName).catch(() => {});
   }, []);
 
   const handleOpenDataDir = useCallback(async () => {
@@ -1205,6 +1209,7 @@ function AppContent({
             themeMode={themeMode}
             lang={lang}
             binaryStatus={binaryStatus}
+            binaryName={binaryName}
             onAutoLaunchToggle={handleAutoLaunchToggle}
             onImport={handleImportConfig}
             onExport={handleExportConfig}

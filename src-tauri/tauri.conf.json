@@ -13,8 +13,14 @@
     "windows": [
       {
         "title": "frpc-app",
-        "width": 800,
-        "height": 600
+        "width": 900,
+        "height": 700,
+        "minWidth": 900,
+        "minHeight": 700,
+        "maxWidth": 900,
+        "maxHeight": 700,
+        "resizable": false,
+        "center": true
       }
     ],
     "security": {

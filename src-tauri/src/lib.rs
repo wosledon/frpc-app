@@ -2,7 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
-use tauri::{Manager, State};
+use tauri::{
+    menu::{MenuBuilder, MenuItemBuilder},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager, State,
+};
 use tokio::process::Command;
 use tokio::sync::Mutex as TokioMutex;
 
@@ -106,6 +110,16 @@ async fn get_download_info() -> Result<serde_json::Value, String> {
         "ext": ext,
         "binary_name": binary_name,
     }))
+}
+
+/// 获取当前平台对应的 frpc 二进制文件名
+#[tauri::command]
+fn get_binary_name() -> String {
+    if cfg!(target_os = "windows") {
+        "frpc.exe".to_string()
+    } else {
+        "frpc".to_string()
+    }
 }
 
 /// 获取数据目录路径
@@ -396,6 +410,47 @@ pub fn run() {
                 binary_path: Mutex::new(binary_path),
             });
 
+            // 系统托盘
+            let show_item = MenuItemBuilder::with_id("show", "显示窗口").build(app)?;
+            let quit_item = MenuItemBuilder::with_id("quit", "退出").build(app)?;
+            let menu = MenuBuilder::new(app)
+                .item(&show_item)
+                .separator()
+                .item(&quit_item)
+                .build()?;
+
+            let _tray = TrayIconBuilder::new()
+                .tooltip("frpc-app")
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -413,6 +468,7 @@ pub fn run() {
             export_config,
             set_auto_launch,
             get_auto_launch_status,
+            get_binary_name,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
