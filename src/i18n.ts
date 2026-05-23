@@ -68,6 +68,7 @@ const translations = {
     // Messages
     "msg.load_config_fail": "加载配置失败: ",
     "msg.save_config_fail": "保存配置失败: ",
+    "msg.save_ok_need_restart": "配置已保存，frpc 正在运行，请重启以应用更改",
     "msg.import_config_fail": "导入配置失败: ",
     "msg.export_config_fail": "导出配置失败: ",
     "msg.stop_fail": "停止失败: ",
@@ -136,6 +137,7 @@ const translations = {
 
     "msg.load_config_fail": "Failed to load config: ",
     "msg.save_config_fail": "Failed to save config: ",
+    "msg.save_ok_need_restart": "Config saved, frpc is running — please restart to apply changes",
     "msg.import_config_fail": "Failed to import config: ",
     "msg.export_config_fail": "Failed to export config: ",
     "msg.stop_fail": "Failed to stop: ",

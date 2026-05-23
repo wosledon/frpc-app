@@ -157,13 +157,13 @@ function useApp() {
     setIsLoading(true);
     try {
       const result = await invoke<string>("save_config", { config });
-      showMessage(result);
+      showMessage(isRunning ? t("msg.save_ok_need_restart") : result);
     } catch (error) {
       showMessage(t("msg.save_config_fail") + error);
     } finally {
       setIsLoading(false);
     }
-  }, [config, showMessage, t]);
+  }, [config, showMessage, t, isRunning]);
 
   const handleImportConfig = useCallback(async () => {
     try {
