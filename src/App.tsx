@@ -765,7 +765,6 @@ function SettingsPage({
   themeMode,
   lang,
   binaryStatus,
-  downloadInfo,
   onAutoLaunchToggle,
   onImport,
   onExport,
@@ -780,7 +779,6 @@ function SettingsPage({
   themeMode: ThemeMode;
   lang: Lang;
   binaryStatus: { exists: boolean; path: string } | null;
-  downloadInfo: { download_page: string; platform: string; ext: string; binary_name: string } | null;
   onAutoLaunchToggle: (enabled: boolean) => void;
   onImport: () => void;
   onExport: () => void;
@@ -969,11 +967,6 @@ function SettingsPage({
               <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", mb: 1.5 }}>
                 {t("settings.download_hint")}
               </Typography>
-              {downloadInfo && (
-                <Typography sx={{ fontSize: "0.7rem", color: "var(--text-muted)", mb: 1.5, fontFamily: "monospace" }}>
-                  {t("settings.frpc_status.path")}: frp_*_{downloadInfo.platform}/{downloadInfo.binary_name}
-                </Typography>
-              )}
               <Box sx={{ display: "flex", gap: 1.5 }}>
                 <Button
                   variant="outlined"
@@ -1173,6 +1166,8 @@ function AppContent({
   const handleOpenDataDir = useCallback(async () => {
     try {
       await invoke("open_data_dir");
+      // 打开目录后刷新 binary 状态
+      invoke<{ exists: boolean; path: string }>("check_binary_status").then(setBinaryStatus).catch(() => {});
     } catch (error) {
       showMessage(String(error));
     }
@@ -1210,7 +1205,6 @@ function AppContent({
             themeMode={themeMode}
             lang={lang}
             binaryStatus={binaryStatus}
-            downloadInfo={downloadInfo}
             onAutoLaunchToggle={handleAutoLaunchToggle}
             onImport={handleImportConfig}
             onExport={handleExportConfig}
