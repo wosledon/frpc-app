@@ -807,7 +807,6 @@ function ProxiesPage({
 
 function SettingsPage({
   autoLaunch,
-  isLoading,
   themeMode,
   lang,
   binaryStatus,
@@ -815,14 +814,12 @@ function SettingsPage({
   onAutoLaunchToggle,
   onImport,
   onExport,
-  onSave,
   onThemeChange,
   onLangChange,
   onOpenDataDir,
   onOpenDownloadPage,
 }: {
   autoLaunch: boolean;
-  isLoading: boolean;
   themeMode: ThemeMode;
   lang: Lang;
   binaryStatus: { exists: boolean; path: string } | null;
@@ -830,7 +827,6 @@ function SettingsPage({
   onAutoLaunchToggle: (enabled: boolean) => void;
   onImport: () => void;
   onExport: () => void;
-  onSave: () => void;
   onThemeChange: (mode: ThemeMode) => void;
   onLangChange: (lang: Lang) => void;
   onOpenDataDir: () => void;
@@ -1053,25 +1049,6 @@ function SettingsPage({
               </Box>
             </Box>
             <Divider sx={{ borderColor: "var(--border-light)" }} />
-
-            {/* Save */}
-            <Button
-              variant="contained"
-              startIcon={isLoading ? <CircularProgress size={16} sx={{ color: "white" }} /> : <Save />}
-              onClick={onSave}
-              disabled={isLoading}
-              sx={{
-                textTransform: "none",
-                fontWeight: 500,
-                fontSize: "0.85rem",
-                py: 1.2,
-                borderRadius: 1.5,
-                bgcolor: "var(--accent)",
-                "&:hover": { bgcolor: "var(--accent-hover)" },
-              }}
-            >
-              {t("settings.save")}
-            </Button>
           </Box>
         </Paper>
       </Box>
@@ -1260,7 +1237,6 @@ function AppContent({
         return (
           <SettingsPage
             autoLaunch={autoLaunch}
-            isLoading={isLoading}
             themeMode={themeMode}
             lang={lang}
             binaryStatus={binaryStatus}
@@ -1268,7 +1244,6 @@ function AppContent({
             onAutoLaunchToggle={handleAutoLaunchToggle}
             onImport={handleImportConfig}
             onExport={handleExportConfig}
-            onSave={handleSaveConfig}
             onThemeChange={onThemeChange}
             onLangChange={onLangChange}
             onOpenDataDir={handleOpenDataDir}
