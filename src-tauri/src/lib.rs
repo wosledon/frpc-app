@@ -49,11 +49,10 @@ pub struct DownloadProgress {
 }
 
 /// 获取应用数据目录
-fn get_app_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let app_dir = app_handle
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?;
+fn get_app_dir(_app_handle: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let exe_path = std::env::current_exe().map_err(|e| e.to_string())?;
+    let exe_dir = exe_path.parent().ok_or("无法获取程序目录")?;
+    let app_dir = exe_dir.join("data");
     std::fs::create_dir_all(&app_dir).map_err(|e| e.to_string())?;
     Ok(app_dir)
 }
