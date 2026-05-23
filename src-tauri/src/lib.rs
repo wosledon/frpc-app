@@ -95,7 +95,7 @@ fn get_platform_identifier() -> Result<&'static str, String> {
 #[tauri::command]
 async fn download_frpc(app_handle: tauri::AppHandle) -> Result<String, String> {
     let app_dir = get_app_dir(&app_handle)?;
-    let _binary_path = get_binary_path(&app_dir);
+    let binary_path = get_binary_path(&app_dir);
 
     // 获取最新 release
     let client = reqwest::Client::new();
@@ -119,7 +119,11 @@ async fn download_frpc(app_handle: tauri::AppHandle) -> Result<String, String> {
         .to_string();
 
     let platform = get_platform_identifier()?;
-    let asset_name = format!("frp_{}_{}.tar.gz", &version[1..], platform);
+
+    // Windows 用 .zip，其他平台用 .tar.gz
+    let is_windows = cfg!(target_os = "windows");
+    let ext = if is_windows { "zip" } else { "tar.gz" };
+    let asset_name = format!("frp_{}_{}.{}", &version[1..], platform, ext);
 
     // 查找对应的 asset
     let assets = release["assets"].as_array().ok_or("无法获取 assets 列表")?;
@@ -127,7 +131,10 @@ async fn download_frpc(app_handle: tauri::AppHandle) -> Result<String, String> {
     let asset = assets
         .iter()
         .find(|a| a["name"].as_str() == Some(&asset_name))
-        .ok_or(format!("未找到适用于 {} 的 frpc 二进制", platform))?;
+        .ok_or(format!(
+            "未找到适用于 {} 的 frpc 二进制 ({})",
+            platform, asset_name
+        ))?;
 
     let download_url = asset["browser_download_url"]
         .as_str()
@@ -145,19 +152,76 @@ async fn download_frpc(app_handle: tauri::AppHandle) -> Result<String, String> {
         .await
         .map_err(|e| format!("读取下载内容失败: {}", e))?;
 
-    // 解压 tar.gz (简化处理，实际需要使用 flate2 + tar crate)
-    // 这里为了简化，假设下载的是纯二进制文件
-    // 实际生产环境需要完整实现 tar.gz 解压
+    // 解压并提取 frpc 二进制
+    let binary_name = if is_windows { "frpc.exe" } else { "frpc" };
+    let version_dir = format!("frp_{}_{}", &version[1..], platform);
 
-    // 临时方案：直接保存（实际需要解压）
-    let temp_path = app_dir.join("frp_download.tar.gz");
-    tokio::fs::write(&temp_path, &bytes)
-        .await
-        .map_err(|e| format!("保存文件失败: {}", e))?;
+    if is_windows {
+        // 解压 zip
+        let reader = std::io::Cursor::new(bytes.as_ref());
+        let mut archive =
+            zip::ZipArchive::new(reader).map_err(|e| format!("打开 zip 失败: {}", e))?;
 
-    // 这里需要解压并提取 frpc 二进制
-    // 为简化，暂时返回成功提示
-    // 实际需要：解压 tar.gz -> 提取 frpc -> 设置执行权限
+        // 在 zip 中查找 frpc.exe
+        let mut found = false;
+        for i in 0..archive.len() {
+            let mut file = archive
+                .by_index(i)
+                .map_err(|e| format!("读取 zip 条目失败: {}", e))?;
+            let name = file.name().to_string();
+            // 匹配 frp_xxx_xxx/frpc.exe
+            if name.ends_with(binary_name) && name.contains(&version_dir) {
+                let mut out = Vec::new();
+                std::io::Read::read_to_end(&mut file, &mut out)
+                    .map_err(|e| format!("读取文件内容失败: {}", e))?;
+                tokio::fs::write(&binary_path, &out)
+                    .await
+                    .map_err(|e| format!("写入 frpc 失败: {}", e))?;
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            return Err("zip 中未找到 frpc.exe".to_string());
+        }
+    } else {
+        // 解压 tar.gz
+        let gz_decoder = flate2::read::GzDecoder::new(bytes.as_ref());
+        let mut archive = tar::Archive::new(gz_decoder);
+
+        let mut found = false;
+        for entry in archive
+            .entries()
+            .map_err(|e| format!("读取 tar 条目失败: {}", e))?
+        {
+            let mut entry = entry.map_err(|e| format!("读取 tar 条目失败: {}", e))?;
+            let path = entry
+                .path()
+                .map_err(|e| format!("获取路径失败: {}", e))?
+                .to_string_lossy()
+                .to_string();
+            if path.ends_with(binary_name) && path.contains(&version_dir) {
+                let mut out = Vec::new();
+                std::io::Read::read_to_end(&mut entry, &mut out)
+                    .map_err(|e| format!("读取文件内容失败: {}", e))?;
+                tokio::fs::write(&binary_path, &out)
+                    .await
+                    .map_err(|e| format!("写入 frpc 失败: {}", e))?;
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            return Err("tar.gz 中未找到 frpc".to_string());
+        }
+
+        // Linux/macOS 设置执行权限
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(&binary_path, std::fs::Permissions::from_mode(0o755));
+        }
+    }
 
     Ok(format!("下载成功: {}", version))
 }
