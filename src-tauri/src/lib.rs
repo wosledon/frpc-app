@@ -554,6 +554,17 @@ pub fn run() {
                 })
                 .build(app)?;
 
+            // 拦截窗口关闭事件，点击关闭按钮时隐藏到托盘
+            if let Some(window) = app.get_webview_window("main") {
+                let w = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = w.hide();
+                    }
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
