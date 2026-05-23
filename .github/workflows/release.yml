@@ -43,12 +43,7 @@ jobs:
         run: npm ci
 
       - name: Build Tauri app
-        run: |
-          if [ "${{ matrix.target }}" != "" ]; then
-            npm run tauri build -- --target "${{ matrix.target }}"
-          else
-            npm run tauri build
-          fi
+        run: npm run tauri build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
