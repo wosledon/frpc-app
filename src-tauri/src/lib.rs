@@ -152,79 +152,74 @@ async fn download_frpc(app_handle: tauri::AppHandle) -> Result<String, String> {
         .await
         .map_err(|e| format!("读取下载内容失败: {}", e))?;
 
-    // 解压并提取 frpc 二进制
+    // 同步解压，提取 frpc 二进制到内存（避免非 Send 类型跨 await）
     let binary_name = if is_windows { "frpc.exe" } else { "frpc" };
     let version_dir = format!("frp_{}_{}", &version[1..], platform);
+    let bytes_vec = bytes.to_vec();
 
-    if is_windows {
-        // 解压 zip
-        let reader = std::io::Cursor::new(bytes.as_ref());
-        let mut archive =
-            zip::ZipArchive::new(reader).map_err(|e| format!("打开 zip 失败: {}", e))?;
-
-        // 在 zip 中查找 frpc.exe
-        let mut found = false;
-        for i in 0..archive.len() {
-            let mut file = archive
-                .by_index(i)
-                .map_err(|e| format!("读取 zip 条目失败: {}", e))?;
-            let name = file.name().to_string();
-            // 匹配 frp_xxx_xxx/frpc.exe
-            if name.ends_with(binary_name) && name.contains(&version_dir) {
-                let mut out = Vec::new();
-                std::io::Read::read_to_end(&mut file, &mut out)
-                    .map_err(|e| format!("读取文件内容失败: {}", e))?;
-                tokio::fs::write(&binary_path, &out)
-                    .await
-                    .map_err(|e| format!("写入 frpc 失败: {}", e))?;
-                found = true;
-                break;
-            }
-        }
-        if !found {
-            return Err("zip 中未找到 frpc.exe".to_string());
-        }
+    let extracted: Vec<u8> = if is_windows {
+        extract_from_zip(&bytes_vec, binary_name, &version_dir)?
     } else {
-        // 解压 tar.gz
-        let gz_decoder = flate2::read::GzDecoder::new(bytes.as_ref());
-        let mut archive = tar::Archive::new(gz_decoder);
+        extract_from_tar_gz(&bytes_vec, binary_name, &version_dir)?
+    };
 
-        let mut found = false;
-        for entry in archive
-            .entries()
-            .map_err(|e| format!("读取 tar 条目失败: {}", e))?
-        {
-            let mut entry = entry.map_err(|e| format!("读取 tar 条目失败: {}", e))?;
-            let path = entry
-                .path()
-                .map_err(|e| format!("获取路径失败: {}", e))?
-                .to_string_lossy()
-                .to_string();
-            if path.ends_with(binary_name) && path.contains(&version_dir) {
-                let mut out = Vec::new();
-                std::io::Read::read_to_end(&mut entry, &mut out)
-                    .map_err(|e| format!("读取文件内容失败: {}", e))?;
-                tokio::fs::write(&binary_path, &out)
-                    .await
-                    .map_err(|e| format!("写入 frpc 失败: {}", e))?;
-                found = true;
-                break;
-            }
-        }
-        if !found {
-            return Err("tar.gz 中未找到 frpc".to_string());
-        }
+    // 异步写入文件
+    tokio::fs::write(&binary_path, &extracted)
+        .await
+        .map_err(|e| format!("写入 frpc 失败: {}", e))?;
 
-        // Linux/macOS 设置执行权限
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let _ = std::fs::set_permissions(&binary_path, std::fs::Permissions::from_mode(0o755));
-        }
+    // Linux/macOS 设置执行权限
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(&binary_path, std::fs::Permissions::from_mode(0o755));
     }
 
     Ok(format!("下载成功: {}", version))
 }
+
+fn extract_from_zip(data: &[u8], binary_name: &str, version_dir: &str) -> Result<Vec<u8>, String> {
+    let reader = std::io::Cursor::new(data);
+    let mut archive =
+        zip::ZipArchive::new(reader).map_err(|e| format!("打开 zip 失败: {}", e))?;
+
+    for i in 0..archive.len() {
+        let mut file = archive
+            .by_index(i)
+            .map_err(|e| format!("读取 zip 条目失败: {}", e))?;
+        let name = file.name().to_string();
+        if name.ends_with(binary_name) && name.contains(version_dir) {
+            let mut out = Vec::new();
+            std::io::Read::read_to_end(&mut file, &mut out)
+                .map_err(|e| format!("读取文件内容失败: {}", e))?;
+            return Ok(out);
+        }
+    }
+    Err("zip 中未找到 frpc.exe".to_string())
+}
+
+fn extract_from_tar_gz(data: &[u8], binary_name: &str, version_dir: &str) -> Result<Vec<u8>, String> {
+    let gz_decoder = flate2::read::GzDecoder::new(data);
+    let mut archive = tar::Archive::new(gz_decoder);
+
+    for entry in archive
+        .entries()
+        .map_err(|e| format!("读取 tar 条目失败: {}", e))?
+    {
+        let mut entry = entry.map_err(|e| format!("读取 tar 条目失败: {}", e))?;
+        let path = entry
+            .path()
+            .map_err(|e| format!("获取路径失败: {}", e))?
+            .to_string_lossy()
+            .to_string();
+        if path.ends_with(binary_name) && path.contains(version_dir) {
+            let mut out = Vec::new();
+            std::io::Read::read_to_end(&mut entry, &mut out)
+                .map_err(|e| format!("读取文件内容失败: {}", e))?;
+            return Ok(out);
+        }
+    }
+    Err("tar.gz 中未找到 frpc".to_string())
 
 /// 启动 frpc 进程
 #[tauri::command]
