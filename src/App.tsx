@@ -1180,7 +1180,12 @@ function AppContent({
 
   const handleOpenDownloadPage = useCallback(async () => {
     if (downloadInfo?.download_page) {
-      window.open(downloadInfo.download_page, "_blank");
+      try {
+        const { open } = await import("@tauri-apps/plugin-shell");
+        await open(downloadInfo.download_page);
+      } catch {
+        window.open(downloadInfo.download_page, "_blank");
+      }
     }
   }, [downloadInfo]);
 
